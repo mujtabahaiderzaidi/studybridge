@@ -1,0 +1,259 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: StudyBridge dashboard operations
+  - name: opportunities
+    description: Scholarships, programs, and competitions
+  - name: sessions
+    description: Community study sessions
+  - name: activity
+    description: Recent community activity
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get the StudyBridge dashboard
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /opportunities:
+    get:
+      operationId: listOpportunities
+      tags: [opportunities]
+      summary: List opportunities
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Opportunity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Opportunity"
+  /opportunities/{id}/save:
+    patch:
+      operationId: toggleOpportunitySaved
+      tags: [opportunities]
+      summary: Save or unsave an opportunity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Updated opportunity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Opportunity"
+        "404":
+          description: Opportunity not found
+  /sessions:
+    get:
+      operationId: listSessions
+      tags: [sessions]
+      summary: List upcoming and completed study sessions
+      responses:
+        "200":
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudySession"
+    post:
+      operationId: createSession
+      tags: [sessions]
+      summary: Create a study session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionInput"
+      responses:
+        "201":
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySession"
+  /sessions/{id}/complete:
+    patch:
+      operationId: completeSession
+      tags: [sessions]
+      summary: Mark a study session complete
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Completed session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudySession"
+        "404":
+          description: Session not found
+  /activity:
+    get:
+      operationId: listActivity
+      tags: [activity]
+      summary: List recent activity
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Dashboard:
+      type: object
+      required: [streak, focusMinutes, sessionsCompleted, opportunitiesSaved, weeklyMinutes, weeklyGoalMinutes]
+      properties:
+        streak:
+          type: number
+        focusMinutes:
+          type: number
+        sessionsCompleted:
+          type: number
+        opportunitiesSaved:
+          type: number
+        weeklyMinutes:
+          type: number
+        weeklyGoalMinutes:
+          type: number
+    Opportunity:
+      type: object
+      required: [id, title, organization, type, deadline, tags, description, saved]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        organization:
+          type: string
+        type:
+          type: string
+        deadline:
+          type: string
+          format: date
+        tags:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        saved:
+          type: boolean
+        featured:
+          type: boolean
+    StudySession:
+      type: object
+      required: [id, title, subject, durationMinutes, scheduledAt, participantCount, status]
+      properties:
+        id:
+          type: number
+        title:
+          type: string
+        subject:
+          type: string
+        durationMinutes:
+          type: number
+        scheduledAt:
+          type: string
+          format: date-time
+        participantCount:
+          type: number
+        status:
+          type: string
+          enum: [upcoming, live, completed]
+    SessionInput:
+      type: object
+      required: [title, subject, durationMinutes, scheduledAt]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        subject:
+          type: string
+          minLength: 1
+        durationMinutes:
+          type: number
+          minimum: 15
+          maximum: 240
+        scheduledAt:
+          type: string
+          format: date-time
+    Activity:
+      type: object
+      required: [id, actor, action, detail, createdAt]
+      properties:
+        id:
+          type: number
+        actor:
+          type: string
+        action:
+          type: string
+        detail:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
